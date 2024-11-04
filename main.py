@@ -1,59 +1,124 @@
-import tkinter as tk
-from tkinter import messagebox
-from sqrEq import sqrEquation
+import flet as ft  
+import string
+import random
 
+all_symbols = string.ascii_letters + string.digits
 
-def close():
-    window.destroy()
+#генератор ключа
+def generate_key(hex_value):
+    dec_value = str(int(hex_value, 16))
+    first_part = list(dec_value[:3])
+    finish_part = dec_value[-2:]
+    
+    key = ''
+    for i in range(3):
+        sequence = random.choices(all_symbols, k=4)
+        sequence.insert(random.randint(0, 4), first_part[i])
+        key += ''.join(sequence)
+        if i == 2:
+            key += f' {finish_part}'
+            break
+        key += '-'
+    return key
 
+def main(page):
+    #установка размеров окна
+    page.window_width = 1089
+    page.window_height = 613
+    page.resizable = False  #запрет изменения размера окна
 
-def calc():
-    A = float(arg_A.get())
-    B = float(arg_B.get())
-    C = float(arg_C.get())
-    if A == 0.0:
-        tk.messagebox.showwarning('Error', 'Division by zero!')
-    else:
-        lbl_result.configure(text=sqrEquation(A, B, C))
+    #убираем стандартные отступы для страницы
+    page.padding = 0
+    page.margin = 0
 
+    #стек для наложения элементов
+    stack = ft.Stack()
 
-window = tk.Tk()
-window.geometry('576x360')
-bg_img = tk.PhotoImage(file='bg_pic.png')
+    #фон
+    background_image = ft.Image(
+        src="/Users/tss/Documents/PYTHON LABS/LAB_3/Lab-3/image.png",
+        fit=ft.ImageFit.COVER,
+        width=1089,
+        height=613,
+    )
+    stack.controls.append(background_image)
 
-lbl_bg = tk.Label(window, image=bg_img)
-lbl_bg.place(x=0, y=0, relwidth=1, relheight=1)
+    #музыка
+    audio = ft.Audio(
+        src="/Users/tss/Documents/PYTHON LABS/LAB_3/Lab-3/26. Cloudy Park (Sky Area).mp3",
+        autoplay=True
+    )
+    stack.controls.append(audio)
 
-frame = tk.Frame(window)
-frame.place(relx=0.5, rely=0.5, anchor='center')
+    #контейнер для выравнивания элементов
+    column = ft.Column(
+        alignment=ft.MainAxisAlignment.CENTER,  # Выравнивание по вертикали по центру
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,  # Выравнивание по горизонтали по центру
+        spacing=10  # Расстояние между элементами
+    )
+    column.controls.append(ft.Container(height=1)) 
 
-lbl_A = tk.Label(frame, text='A', font=('Arial', 30), bg='blue', fg='white')
-lbl_A.grid(column=0, row=0, padx=10, pady=15)
-arg_A = tk.Entry(frame, width=10)
-arg_A.insert(0, '1')
-arg_A.grid(column=0, row=1, padx=10, pady=15)
+    #поле для ввода hex числа
+    hex_field = ft.TextField(
+        label="Enter your HEX number:",
+        bgcolor=ft.colors.BLACK, 
+        cursor_color="yellow",
+        hover_color="pink300", #цвет при наведении
+        border_color=ft.colors.YELLOW,
+        width=700,
+        text_align=ft.TextAlign.CENTER, #текст вводится из центра
+        border_radius=ft.border_radius.all(10), #закругления рамочки
+        color="yellow",
+    )
 
-lbl_B = tk.Label(frame, text='B', font=('Arial', 30))
-lbl_B.grid(column=1, row=0, padx=10, pady=15)
-arg_B = tk.Entry(frame, width=10)
-arg_B.insert(0, '0')
-arg_B.grid(column=1, row=1, padx=10, pady=15)
+    #кнопка для генерации результата
+    btn = ft.ElevatedButton(
+        "Generate Key", 
+        on_click=lambda e: btn_click(e), 
+        width=400,
+        bgcolor=ft.colors.YELLOW_300, 
+        color=ft.colors.PINK_300,
+        style=ft.ButtonStyle(
+            overlay_color=ft.colors.YELLOW_500, 
+            padding=ft.Padding(top=15, right=20, bottom=15, left=20), #настройка внутренних отступов
+            shape=ft.RoundedRectangleBorder(radius=10)  #закругление углов
+        )
+    )
 
-lbl_C = tk.Label(frame, text='C', font=('Arial', 30))
-lbl_C.grid(column=2, row=0, padx=10, pady=15)
-arg_C = tk.Entry(frame, width=10)
-arg_C.insert(0, '0')
-arg_C.grid(column=2, row=1, padx=10, pady=15)
+    #кнопка для отображения результата
+    result_button = ft.ElevatedButton(
+        "YOUR KEY WILL APPEAR HERE", 
+        bgcolor=ft.colors.BLUE_100,
+        width=300,
+        color=ft.colors.PINK_400,
+        style=ft.ButtonStyle(
+            padding=ft.Padding(top=15, right=20, bottom=15, left=20), 
+            shape=ft.RoundedRectangleBorder(radius=10)
+        )
+    )
 
-lbl_roots = tk.Label(frame, text='Result:')
-lbl_roots.grid(column=1, row=2)
-lbl_result = tk.Label(frame, text='None yet.', font=('Arial', 10))
-lbl_result.grid(column=2, row=2)
+    #бработчик нажатия кнопки
+    def btn_click(e):
+        if not hex_field.value:
+            hex_field.error_text = "Please enter correct HEX number"
+            page.update()
+        else:
+            hex_value = hex_field.value
+            name = generate_key(hex_value)
+            result_button.text = f"{name}"  # обновить текст на кнопке результата
+            hex_field.error_text = ""  #очистить текст ошибки
+            page.update() 
 
-btn_calc = tk.Button(frame, text='Calculate', command=calc)
-btn_calc.grid(column=0, row=3, padx=10, pady=15)
-btn_exit = tk.Button(frame, text='Cancel', command=close)
-btn_exit.grid(column=2, row=3, padx=10, pady=15)
+    #добавляем элементы в столбец
+    column.controls.append(hex_field)  #текстовое поле
+    column.controls.append(btn)  #кнопка генерации
+    column.controls.append(result_button)  #кнопка вывода результата
 
+    #добавляем контейнер с кнопками в стек
+    stack.controls.append(column)
 
-window.mainloop()
+    #добавляем стек на страницу
+    page.controls.append(stack) 
+    page.update() 
+
+ft.app(target=main)
